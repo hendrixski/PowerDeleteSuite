@@ -623,12 +623,13 @@ var pd = {
     csvCell: function (str) {
       return '"' + str + '",';
     },
-    // Read headers 
     getRateLimitTimeout: function(xhr) {
+      // Read headers 
       const rateLimitRemaining = parseInt(xhr.getResponseHeader('x-ratelimit-remaining'), 10);
       const rateLimitReset = parseInt(xhr.getResponseHeader('x-ratelimit-reset'), 10);
       // Determine timeout
       let timeout;
+      // if ratelimit low, set the timeout to wait based on the reset time
       if (rateLimitRemaining <= 5) {
         timeout = (rateLimitReset + 1) * 1000;
       } else {
@@ -730,7 +731,6 @@ var pd = {
           },
         }).complete(        
           function (xhr) {
-            console.log(xhr);
             resp = xhr.responseJSON;
             if (resp.data) {
               const timeout = pd.helpers.getRateLimitTimeout(xhr);
