@@ -623,6 +623,20 @@ var pd = {
     csvCell: function (str) {
       return '"' + str + '",';
     },
+    // Read headers 
+    getRateLimitTimeout: function(xhr) {
+      const rateLimitRemaining = parseInt(xhr.getResponseHeader('x-ratelimit-remaining'), 10);
+      const rateLimitReset = parseInt(xhr.getResponseHeader('x-ratelimit-reset'), 10);
+      // Determine timeout
+      let timeout;
+      if (rateLimitRemaining <= 5) {
+        timeout = (rateLimitReset + 1) * 1000;
+      } else {
+        // Randomize timeout between 1.5 to 3 seconds 
+        timeout = Math.floor(Math.random() * 1500) + 1500; 
+      }
+      return timeout;
+    },
     getSettings: function () {
       return localStorage.getItem("pd_storage")
         ? JSON.parse(localStorage.getItem("pd_storage"))
@@ -719,16 +733,7 @@ var pd = {
             console.log(xhr);
             resp = xhr.responseJSON;
             if (resp.data) {
-              // Read headers
-              var rateLimitRemaining = parseInt(xhr.getResponseHeader('x-ratelimit-remaining'), 10);
-              var rateLimitReset = parseInt(xhr.getResponseHeader('x-ratelimit-reset'), 10);
-              console.log('remaining: ' + rateLimitRemaining);
-              console.log('reset: ' + rateLimitReset);
-              // Determine timeout
-              var timeout = 5000; // default timeout
-              if (rateLimitRemaining <= 5) {
-                timeout = (rateLimitReset + 1) * 1000; 
-              }
+              const timeout = pd.helpers.getRateLimitTimeout(xhr);
               console.log('timeout: ' + timeout);
               // Set the next action with the calculated timeout
               setTimeout(() => {
@@ -900,16 +905,7 @@ var pd = {
           },
         }).complete(
           function (xhr) {
-            // Read headers
-            var rateLimitRemaining = parseInt(xhr.getResponseHeader('x-ratelimit-remaining'), 10);
-            var rateLimitReset = parseInt(xhr.getResponseHeader('x-ratelimit-reset'), 10);
-            console.log('remaining: ' + rateLimitRemaining);
-            console.log('reset: ' + rateLimitReset);
-            // Determine timeout
-            var timeout = 5000; // default timeout
-            if (rateLimitRemaining <= 5) {
-              timeout = (rateLimitReset + 1) * 1000; 
-            }
+            const timeout = pd.helpers.getRateLimitTimeout(xhr);
             console.log('timeout: ' + timeout);
             // Set the next action with the calculated timeout
             setTimeout(() => {
@@ -956,16 +952,7 @@ var pd = {
           },
         }).complete(
           function (xhr) {
-            // Read headers
-            var rateLimitRemaining = parseInt(xhr.getResponseHeader('x-ratelimit-remaining'), 10);
-            var rateLimitReset = parseInt(xhr.getResponseHeader('x-ratelimit-reset'), 10);
-            console.log('remaining: ' + rateLimitRemaining);
-            console.log('reset: ' + rateLimitReset);
-            // Determine timeout
-            var timeout = 5000; // default timeout
-            if (rateLimitRemaining <= 5) {
-              timeout = (rateLimitReset + 1) * 1000; 
-            }
+            const timeout = pd.helpers.getRateLimitTimeout(xhr);
             console.log('timeout: ' + timeout);
             // Set the next action with the calculated timeout
             setTimeout(() => {
