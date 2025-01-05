@@ -758,7 +758,7 @@ var pd = {
                 pd.ui.done();
               }
             }
-          },
+        }).fail(
           function () {
             pd.task.info.errors++;
             if (
