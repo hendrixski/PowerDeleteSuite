@@ -717,6 +717,7 @@ var pd = {
         }).then(        
           function (resp) {
             if (resp.data) {
+              console.log(resp);
               // Read headers
               var rateLimitRemaining = parseInt(resp.getResponseHeader('x-ratelimit-remaining'), 10);
               var rateLimitReset = parseInt(resp.getResponseHeader('x-ratelimit-reset'), 10);
