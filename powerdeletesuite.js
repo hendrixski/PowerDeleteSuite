@@ -714,8 +714,9 @@ var pd = {
             sort: pd.task.paths.sorts[0],
             t: pd.task.paths.timeframes[0],
           },
-        }).then(        
-          function (resp) {
+        }).complete(        
+          function (xhr) {
+            console.log(xhr);
             if (resp.data) {
               console.log(resp);
               // Read headers
