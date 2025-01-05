@@ -717,11 +717,11 @@ var pd = {
         }).complete(        
           function (xhr) {
             console.log(xhr);
+            resp = xhr.responseJSON;
             if (resp.data) {
-              console.log(resp);
               // Read headers
-              var rateLimitRemaining = parseInt(resp.getResponseHeader('x-ratelimit-remaining'), 10);
-              var rateLimitReset = parseInt(resp.getResponseHeader('x-ratelimit-reset'), 10);
+              var rateLimitRemaining = parseInt(xhr.getResponseHeader('x-ratelimit-remaining'), 10);
+              var rateLimitReset = parseInt(xhr.getResponseHeader('x-ratelimit-reset'), 10);
               console.log('remaining: ' + rateLimitRemaining);
               console.log('reset: ' + rateLimitReset);
               // Determine timeout
