@@ -409,13 +409,21 @@ var pd = {
       });
     },
     addSkipInteractionsUI: function () {
-      // Add the skip interactions checkbox after the remember settings checkbox
+      // Add the retry and skip interactions options after the remember settings checkbox
       var rememberSection = $("#pd__remember").closest("div");
       if (rememberSection.length > 0) {
         rememberSection.after(
           '<div>' +
+          '<input type="checkbox" name="pd__enable-retries" id="pd__enable-retries" checked />' +
+          '<label for="pd__enable-retries"> Enable automatic retries on failure</label>' +
+          '</div>' +
+          '<div style="margin-left: 20px;">' +
+          '<label for="pd__retry-count">Retry attempts: </label>' +
+          '<input type="number" name="pd__retry-count" id="pd__retry-count" value="3" min="1" max="10" style="width: 60px;" />' +
+          '</div>' +
+          '<div>' +
           '<input type="checkbox" name="pd__skip-interactions" id="pd__skip-interactions" />' +
-          '<label for="pd__skip-interactions"> Skip all user interaction prompts (auto-continue after 3 retry attempts)</label>' +
+          '<label for="pd__skip-interactions"> Skip all user interaction prompts (auto-continue after retries or immediately if retries disabled)</label>' +
           '</div>'
         );
       }
@@ -459,6 +467,8 @@ var pd = {
           isEditing: $("#pd__comments-edit").is(":checked"),
           editText: $("#pd__comments-edit-text").val(),
           skipUserInteractions: $("#pd__skip-interactions").is(":checked"),
+          enableRetries: $("#pd__enable-retries").is(":checked"),
+          retryCount: parseInt($("#pd__retry-count").val()) || 3,
         },
         paths: {
           sections:
@@ -913,26 +923,26 @@ var pd = {
               pd.task.info.errors++;
               item.pdDeleteRetries++;
               
-              // Retry up to 3 times before asking user
-              if (item.pdDeleteRetries < 3) {
+              // Check if retries are enabled and we haven't exceeded the limit
+              if (pd.task.config.enableRetries && item.pdDeleteRetries < pd.task.config.retryCount) {
                 pd.actions.delete(item);
                 return;
               }
               
-              // After 3 retries, check skip interactions setting
+              // After max retries (or if retries disabled), check skip interactions setting
               if (pd.task.config.skipUserInteractions) {
                 // Skip user interaction, continue with next item
                 pd.actions.children.finishItem();
                 pd.actions.children.handleGroup();
               } else {
-                // Show confirmation dialog as before
-                if (
-                  confirm(
-                    "Error deleting " +
-                      (item.kind == "t3" ? "post" : "comment") +
-                      " after 3 attempts, would you like to continue with the next item?"
-                  )
-                ) {
+                // Show confirmation dialog
+                var message = "Error deleting " + (item.kind == "t3" ? "post" : "comment");
+                if (pd.task.config.enableRetries) {
+                  message += " after " + pd.task.config.retryCount + " attempts";
+                }
+                message += ", would you like to continue with the next item?";
+                
+                if (confirm(message)) {
                   pd.actions.children.finishItem();
                   pd.actions.children.handleGroup();
                 } else {
@@ -979,26 +989,26 @@ var pd = {
               pd.task.info.errors++;
               item.pdEditRetries++;
               
-              // Retry up to 3 times before asking user
-              if (item.pdEditRetries < 3) {
+              // Check if retries are enabled and we haven't exceeded the limit
+              if (pd.task.config.enableRetries && item.pdEditRetries < pd.task.config.retryCount) {
                 pd.actions.edit(item);
                 return;
               }
               
-              // After 3 retries, check skip interactions setting
+              // After max retries (or if retries disabled), check skip interactions setting
               if (pd.task.config.skipUserInteractions) {
                 // Skip user interaction, mark as edited and continue
                 item.pdEdited = true;
                 pd.actions.children.handleSingle();
               } else {
-                // Show confirmation dialog as before
-                if (
-                  !confirm(
-                    "Error editing " +
-                      (item.kind == "t3" ? "post" : "comment") +
-                      " after 3 attempts, would you like to continue with the next item?"
-                  )
-                ) {
+                // Show confirmation dialog
+                var message = "Error editing " + (item.kind == "t3" ? "post" : "comment");
+                if (pd.task.config.enableRetries) {
+                  message += " after " + pd.task.config.retryCount + " attempts";
+                }
+                message += ", would you like to continue with the next item?";
+                
+                if (!confirm(message)) {
                   item.pdEdited = true;
                 }
                 pd.actions.children.handleSingle();
