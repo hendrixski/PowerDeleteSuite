@@ -1,49 +1,49 @@
 ## PowerDeleteSuite — Copilot instructions
 
-Short, focused notes to help an AI agent be immediately productive editing this repo.
+Concise, actionable notes to help an AI agent be immediately productive in this repo.
 
-1) Big picture (what this code does)
-   - Single-page client-side bookmarklet / userscript that runs on old.reddit.com user overview.
-   - Main app is the global `pd` object in `powerdeletesuite.js`. There is no backend — all actions use Reddit JSON endpoints.
-   - UI markup is pulled at runtime from the subreddit wiki (`/r/PowerDeleteSuite/wiki/centralform.json`) and CSS is fetched from a raw JSON stylesheet URL.
+- Big picture
+   - Single-page client-side bookmarklet / userscript that runs on old.reddit.com (user overview). No backend; all actions call Reddit JSON endpoints.
+   - Runtime entry is `powerdeletesuite.js`. The app exposes a global `pd` object (state, settings, endpoints, helpers).
+   - UI is mostly wiki-driven: markup comes from the subreddit's wiki JSON and CSS from a JSON `stylesheet` resource.
 
-2) Key files to read first
-   - `powerdeletesuite.js` — the entire app (init, settings, endpoints, UI binders, filters, deletion/edit flows).
-   - `bookmarklet.js` and `powerdeletesuite.user.js` — wrappers / distribution formats (bookmarklet and userscript headers).
-   - `README.md` — install & usage instructions and the bookmarklet snippet users copy.
-   - `stylesheet.json` — repository copy of stylesheet data referenced by the app.
+- Key files to read first
+   - `powerdeletesuite.js` — full app (init, settings, endpoints, UI binders, filters, edit/delete flows). Primary edit target.
+   - `bookmarklet.js`, `powerdeletesuite.user.js` — packaging/wrappers (bookmarklet string and userscript headers).
+   - `README.md` — install/bookmarklet snippet and usage notes you must keep in sync with `pd.bookmarkver`.
+   - `stylesheet.json` — local copy of stylesheet payload used by `pd.setup.applyStyles()`.
 
-3) Architecture & runtime patterns (concrete)
-   - Global object `pd` holds version (pd.version), bookmarklet version (pd.bookmarkver), config, endpoints, and runtime state.
-   - Uses jQuery (`$`) and `$.ajax(...).then(success, failure)` style rather than fetch/async/await.
-   - Reddit integration: calls to endpoints like `/user/<user>/comments/.json`, `/user/<user>/submitted/.json`, and `/search.json`.
-   - Settings and simple persistence: `localStorage` keys (e.g., `pd_ver`) and DOM parsing to extract Reddit modhash (`#config`).
+- Concrete runtime patterns & conventions
+   - Global API: `pd` contains `pd.version`, `pd.bookmarkver`, `pd.endpoints`, `pd.setup.*`, `pd.checks.*`, and `pd.editStrings`.
+   - Networking: uses jQuery (`$`) and `$.ajax(...).then(success, failure)`. Expect callback style, not async/await.
+   - Reddit endpoints used: `/user/<user>/comments/.json`, `/user/<user>/submitted/.json`, `/search.json`, and post/edit/delete JSON endpoints.
+   - Persisted settings live in `localStorage` (keys like `pd_ver`); UI and behavior depend on those keys.
+   - Modhash / CSRF token extraction reads `#config` innerHTML. This is fragile — do not change selector logic lightly.
 
-4) Developer workflows / testing (how to verify changes)
-   - No build step. Edit `powerdeletesuite.js` directly.
-   - Typical dev checklist when changing behavior:
-     - bump `pd.version` (and optionally `pd.bookmarkver` if bookmarklet string changes)
-     - update the README bookmarklet snippet if you changed the hosted/URL behavior
-     - smoke test on `https://old.reddit.com/u/me/overview` and exercise: load comments, run filter, attempt an edit and a delete flow
+- Developer workflow and verification
+   - No build step. Edit `powerdeletesuite.js` and other files directly. Changes are validated by manual smoke tests.
+   - Manual test steps: install bookmarklet/userscript or load `powerdeletesuite.js` on `https://old.reddit.com/u/me/overview`, then:
+      1. Load comments/submissions (use filters).
+      2. Run an edit flow (use `pd.editStrings` candidates).
+      3. Run a delete flow.
+   - Typical PR checklist:
+      - Bump `pd.version` for changes; bump `pd.bookmarkver` only if the bookmarklet string in `README.md` must change.
+      - Update `README.md` if distribution/install string changes.
+      - Describe which flows you tested on `old.reddit.com/u/me/overview`.
 
-5) Conventions and fragile/important details (do not change lightly)
-   - Identity check: `pd.checks.location()` compares DOM username text to header link. If you change selectors, tests will break.
-   - `pd.setup.applyCentral()` and `pd.setup.applyStyles()` fetch remote wiki and stylesheet JSON — UI is wiki-driven. Be aware of CORS and network failures.
-   - `pd.editStrings` is the in-file list of candidate edit texts; changing it affects edit behavior.
-   - Modhash extraction uses `#config` innerHTML parsing — this is brittle; prefer keeping the same extraction if possible.
+- Fragile areas and common failure modes
+   - DOM selectors: `pd.checks.location()` compares username text to header link — changing selectors breaks the startup guard.
+   - Remote wiki/CSS fetch: `pd.setup.applyCentral()` and `pd.setup.applyStyles()` fetch external JSON; network/CORS failures cause visible alerts.
+   - Modhash extraction: parsing `#config` innerHTML is brittle and required for authenticated actions.
 
-6) Helpful code examples (copy/paste pointers)
-   - Where endpoints are defined: in `powerdeletesuite.js` -> `pd.setup.basicSettings()` (look for `pd.endpoints`).
-   - Where UI is filled from the wiki: `pd.setup.applyCentral()`.
-   - Where CSS is injected: `pd.setup.applyStyles()` — it expects JSON with `data.stylesheet`.
+- Where to make common edits (quick pointers)
+   - Endpoints and defaults: `pd.setup.basicSettings()` (search for `pd.endpoints`).
+   - Wiki-driven UI: `pd.setup.applyCentral()` — how forms and labels are populated.
+   - Stylesheet injection: `pd.setup.applyStyles()` expects `data.stylesheet` JSON.
+   - Edit text candidates: `pd.editStrings` array in `powerdeletesuite.js`.
 
-7) Common failure modes to watch for
-   - Empty or changed Reddit DOM selectors (username, #config) — will make the script refuse to run.
-   - Remote wiki or stylesheet fetch failures — script alerts on failure; add robust fallbacks if needed.
-   - Running on the wrong reddit domain (new reddit) — script explicitly checks for `old.reddit.com` style overview path.
+- Small tips
+   - Preserve jQuery patterns; convert to Promises only if you update all call sites.
 
-8) Pull request checklist for code changes
-   - Update `pd.version` for user-facing changes; bump `pd.bookmarkver` only when bookmarklet install string in `README.md` must change.
-   - Mention in PR description how you tested on `old.reddit.com/u/me/overview` and what flows you exercised (comments, submissions, search, edit+delete order).
-
+If anything here is unclear or you want a short test harness that simulates Reddit JSON responses for automated tests, tell me which flows to emulate and I'll add it.
 If anything above is unclear or you'd like me to add quick local launch scripts (or a tiny test runner that simulates Reddit JSON responses), tell me which part to expand and I will update this file.
