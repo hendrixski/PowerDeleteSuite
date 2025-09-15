@@ -428,7 +428,7 @@ var pd = {
           '    <label for="pd__enable-retries">Enable automatic retries on failure</label>' +
           '    <span style="margin-left: 1em;">' +
           '      <label for="pd__retry-count">Retry attempts:</label>' +
-          '      <input type="number" name="pd__retry-count" id="pd__retry-count" value="2" min="1" max="10" style="width: 4.2em; margin-left: .6em; padding-left: .25em;" />' +
+          '      <input type="number" name="pd__retry-count" id="pd__retry-count" value="2" min="1" max="10" style="width: 4.2em; margin-left: .6em; padding-left: .25em; width: 35px;" />' +
           '    </span>' +
           '  </div>' +
           '  <div>' +
