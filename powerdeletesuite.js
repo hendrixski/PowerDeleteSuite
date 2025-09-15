@@ -1,5 +1,5 @@
 var pd = {
-  version: "1.4.12",
+  version: "1.4.13",
   bookmarkver: "1.4",
   editStrings: [
     "I love ice cream.",
@@ -409,23 +409,32 @@ var pd = {
       });
     },
     addSkipInteractionsUI: function () {
-      // Add the retry and skip interactions options after the remember settings checkbox
-      var rememberSection = $("#pd__remember").closest("div");
-      if (rememberSection.length > 0) {
-        rememberSection.after(
-          '<div>' +
+      // Add the retry and skip interactions options in a separate section above the process button
+      var processButton = $("#pd__form input[type='submit'], #pd__form button[type='submit']");
+      if (processButton.length === 0) {
+        // Fallback: look for the form itself and append before it ends
+        processButton = $("#pd__form").children().last();
+      }
+      
+      if (processButton.length > 0) {
+        var settingsSection = 
+          '<div style="border-top: 1px solid #ccc; margin: 20px 0; padding: 20px 0;">' +
+          '<h3 style="margin: 0 0 15px 0; font-size: 16px; color: #333;">Advanced Settings</h3>' +
+          '<div style="margin-bottom: 15px;">' +
           '<input type="checkbox" name="pd__enable-retries" id="pd__enable-retries" checked />' +
           '<label for="pd__enable-retries"> Enable automatic retries on failure</label>' +
-          '</div>' +
-          '<div style="margin-left: 20px;">' +
+          '<span style="margin-left: 20px;">' +
           '<label for="pd__retry-count">Retry attempts: </label>' +
-          '<input type="number" name="pd__retry-count" id="pd__retry-count" value="3" min="1" max="10" style="width: 60px;" />' +
+          '<input type="number" name="pd__retry-count" id="pd__retry-count" value="2" min="1" max="10" style="width: 60px;" />' +
+          '</span>' +
           '</div>' +
           '<div>' +
           '<input type="checkbox" name="pd__skip-interactions" id="pd__skip-interactions" />' +
           '<label for="pd__skip-interactions"> Skip all user interaction prompts (auto-continue after retries or immediately if retries disabled)</label>' +
-          '</div>'
-        );
+          '</div>' +
+          '</div>';
+        
+        processButton.before(settingsSection);
       }
     },
     createProcessStream: function () {
@@ -468,7 +477,7 @@ var pd = {
           editText: $("#pd__comments-edit-text").val(),
           skipUserInteractions: $("#pd__skip-interactions").is(":checked"),
           enableRetries: $("#pd__enable-retries").is(":checked"),
-          retryCount: parseInt($("#pd__retry-count").val()) || 3,
+          retryCount: parseInt($("#pd__retry-count").val()) || 2,
         },
         paths: {
           sections:
