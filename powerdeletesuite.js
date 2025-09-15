@@ -937,6 +937,10 @@ var pd = {
             },
           }).then(
             function () {
+              // clear retry status for this item on success
+              if (pd.task && pd.task.info) {
+                pd.task.info.retrying = null;
+              }
               pd.task.items[0].pdDeleted = true;
               pd.actions.children.handleSingle();
             },
@@ -946,6 +950,16 @@ var pd = {
               
               // Check if retries are enabled and we haven't exceeded the limit
               if (pd.task.config.enableRetries && item.pdDeleteRetries < pd.task.config.retryCount) {
+                // update retrying status so UI can show attempts/remaining
+                if (pd.task && pd.task.info) {
+                  pd.task.info.retrying = {
+                    kind: "delete",
+                    id: item.data.id,
+                    attempted: item.pdDeleteRetries,
+                    remaining: pd.task.config.retryCount - item.pdDeleteRetries,
+                  };
+                }
+                pd.ui.updateDisplay();
                 pd.actions.delete(item);
                 return;
               }
@@ -953,6 +967,7 @@ var pd = {
               // After max retries (or if retries disabled), check skip interactions setting
               if (pd.task.config.skipUserInteractions) {
                 // Skip user interaction, continue with next item
+                if (pd.task && pd.task.info) pd.task.info.retrying = null;
                 pd.actions.children.finishItem();
                 pd.actions.children.handleGroup();
               } else {
@@ -964,6 +979,7 @@ var pd = {
                 message += ", would you like to continue with the next item?";
                 
                 if (confirm(message)) {
+                  if (pd.task && pd.task.info) pd.task.info.retrying = null;
                   pd.actions.children.finishItem();
                   pd.actions.children.handleGroup();
                 } else {
@@ -1003,6 +1019,10 @@ var pd = {
             },
           }).then(
             function () {
+              // clear retry status for this item on success
+              if (pd.task && pd.task.info) {
+                pd.task.info.retrying = null;
+              }
               pd.task.items[0].pdEdited = true;
               pd.actions.children.handleSingle();
             },
@@ -1012,6 +1032,16 @@ var pd = {
               
               // Check if retries are enabled and we haven't exceeded the limit
               if (pd.task.config.enableRetries && item.pdEditRetries < pd.task.config.retryCount) {
+                // update retrying status so UI can show attempts/remaining
+                if (pd.task && pd.task.info) {
+                  pd.task.info.retrying = {
+                    kind: "edit",
+                    id: item.data.id,
+                    attempted: item.pdEditRetries,
+                    remaining: pd.task.config.retryCount - item.pdEditRetries,
+                  };
+                }
+                pd.ui.updateDisplay();
                 pd.actions.edit(item);
                 return;
               }
@@ -1019,6 +1049,7 @@ var pd = {
               // After max retries (or if retries disabled), check skip interactions setting
               if (pd.task.config.skipUserInteractions) {
                 // Skip user interaction, mark as edited and continue
+                if (pd.task && pd.task.info) pd.task.info.retrying = null;
                 item.pdEdited = true;
                 pd.actions.children.handleSingle();
               } else {
@@ -1032,6 +1063,7 @@ var pd = {
                 if (!confirm(message)) {
                   item.pdEdited = true;
                 }
+                if (pd.task && pd.task.info) pd.task.info.retrying = null;
                 pd.actions.children.handleSingle();
               }
             }
@@ -1059,6 +1091,25 @@ var pd = {
             pd.task.paths.timeframes[0] +
             "</small>"
         );
+      // Retry status: show attempted and remaining retries for current item when present
+      try {
+        if (pd.task && pd.task.info && pd.task.info.retrying) {
+          var r = pd.task.info.retrying;
+          var txt = (r.kind === "delete" ? "Deleting" : "Editing") +
+            " item " + (r.id || "") +
+            ": attempt " + r.attempted +
+            " (" + r.remaining + " left)";
+          if (document.getElementById("pd__retry-status")) {
+            $("#pd__retry-status").text(txt).show();
+          } else {
+            $("#pd__central .processing").first().before('<div id="pd__retry-status" style="margin: .6em 0; color: #b00; font-weight: bold;">' + txt + '</div>');
+          }
+        } else {
+          $("#pd__retry-status").hide();
+        }
+      } catch (e) {
+        // ignore DOM errors
+      }
       pd.task.info.numPages =
         pd.task.info.donePages +
         (pd.task.paths.sections.length - 1) * 4 +
