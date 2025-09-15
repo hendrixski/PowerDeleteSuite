@@ -680,6 +680,15 @@ var pd = {
         }
         $(".gt-toggle").not(":checked").change();
       }
+      // Ensure the retry-count field displays the default value so user knows the default
+      try {
+        var $retry = $("#pd__retry-count");
+        if ($retry.length && ($retry.val() === "" || typeof $retry.val() === "undefined")) {
+          $retry.val("2");
+        }
+      } catch (e) {
+        /* ignore if element not present */
+      }
     },
     saveSettings: function () {
       if ($("#pd__remember").is(":checked")) {
