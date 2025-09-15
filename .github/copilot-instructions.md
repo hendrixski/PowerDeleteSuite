@@ -44,6 +44,3 @@ Concise, actionable notes to help an AI agent be immediately productive in this 
 
 - Small tips
    - Preserve jQuery patterns; convert to Promises only if you update all call sites.
-
-If anything here is unclear or you want a short test harness that simulates Reddit JSON responses for automated tests, tell me which flows to emulate and I'll add it.
-If anything above is unclear or you'd like me to add quick local launch scripts (or a tiny test runner that simulates Reddit JSON responses), tell me which part to expand and I will update this file.

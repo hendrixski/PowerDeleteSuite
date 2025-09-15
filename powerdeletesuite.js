@@ -415,25 +415,28 @@ var pd = {
         // Fallback: look for the form itself and append before it ends
         processButton = $("#pd__form").children().last();
       }
-      
+
       if (processButton.length > 0) {
-        var settingsSection = 
-          '<div style="border-top: 1px solid #ccc; margin: 20px 0; padding: 20px 0;">' +
-          '<h3 style="margin: 0 0 15px 0; font-size: 16px; color: #333;">Advanced Settings</h3>' +
-          '<div style="margin-bottom: 15px;">' +
-          '<input type="checkbox" name="pd__enable-retries" id="pd__enable-retries" checked />' +
-          '<label for="pd__enable-retries"> Enable automatic retries on failure</label>' +
-          '<span style="margin-left: 20px;">' +
-          '<label for="pd__retry-count">Retry attempts: </label>' +
-          '<input type="number" name="pd__retry-count" id="pd__retry-count" value="2" min="1" max="10" style="width: 60px;" />' +
-          '</span>' +
-          '</div>' +
-          '<div>' +
-          '<input type="checkbox" name="pd__skip-interactions" id="pd__skip-interactions" />' +
-          '<label for="pd__skip-interactions"> Skip all user interaction prompts (auto-continue after retries or immediately if retries disabled)</label>' +
-          '</div>' +
+        // Use the same section class other parts of the UI use so it inherits sizing/padding
+        // Collapsible pattern: hidden checkbox (.xt) + label + following .xtr-section
+        var settingsSection =
+          '<input class="xt xtr" type="checkbox" id="pd__adv-toggle" />' +
+          '<label class="xtr" for="pd__adv-toggle">Advanced Settings</label>' +
+          '<div class="xtr-section" id="pd__advanced">' +
+          '  <div class="pd__adv-row" style="margin-bottom: .6em;">' +
+          '    <input type="checkbox" name="pd__enable-retries" id="pd__enable-retries" checked class="ind" />' +
+          '    <label for="pd__enable-retries">Enable automatic retries on failure</label>' +
+          '    <span style="margin-left: 1em;">' +
+          '      <label for="pd__retry-count">Retry attempts:</label>' +
+          '      <input type="number" name="pd__retry-count" id="pd__retry-count" value="2" min="1" max="10" style="width: 4.2em; margin-left: .4em;" />' +
+          '    </span>' +
+          '  </div>' +
+          '  <div>' +
+          '    <input type="checkbox" name="pd__skip-interactions" id="pd__skip-interactions" class="ind" />' +
+          '    <label for="pd__skip-interactions">Skip all user interaction prompts (auto-continue after retries or immediately if retries disabled)</label>' +
+          '  </div>' +
           '</div>';
-        
+
         processButton.before(settingsSection);
       }
     },
