@@ -359,6 +359,7 @@ var pd = {
             .first()
             .text("Power Delete Suite v" + pd.version);
           pd.setup.applySubList();
+          pd.setup.addSkipInteractionsUI();
           pd.setup.bindUI();
           pd.helpers.restoreSettings();
         },
@@ -407,6 +408,18 @@ var pd = {
         ).prepend("<b class='m'>[M]</b>");
       });
     },
+    addSkipInteractionsUI: function () {
+      // Add the skip interactions checkbox after the remember settings checkbox
+      var rememberSection = $("#pd__remember").closest("div");
+      if (rememberSection.length > 0) {
+        rememberSection.after(
+          '<div>' +
+          '<input type="checkbox" name="pd__skip-interactions" id="pd__skip-interactions" />' +
+          '<label for="pd__skip-interactions"> Skip all user interaction prompts (auto-continue after 3 retry attempts)</label>' +
+          '</div>'
+        );
+      }
+    },
     createProcessStream: function () {
       window.pd_processing = true;
       pd.exportItems = [];
@@ -445,6 +458,7 @@ var pd = {
           isRemovingComments: $("#pd__comments").is(":checked"),
           isEditing: $("#pd__comments-edit").is(":checked"),
           editText: $("#pd__comments-edit-text").val(),
+          skipUserInteractions: $("#pd__skip-interactions").is(":checked"),
         },
         paths: {
           sections:
@@ -732,6 +746,7 @@ var pd = {
             } else {
               pd.task.info.errors++;
               if (
+                pd.task.config.skipUserInteractions ||
                 confirm(
                   "Reddit seems to be under heavy load. Would you like to continue processing?"
                 )
@@ -746,6 +761,7 @@ var pd = {
           function () {
             pd.task.info.errors++;
             if (
+              pd.task.config.skipUserInteractions ||
               confirm(
                 "Error getting " +
                   pd.task.paths.sections[0] +
@@ -872,6 +888,11 @@ var pd = {
       },
     },
     delete: function (item) {
+      // Initialize retry counter if not present
+      if (!item.pdDeleteRetries) {
+        item.pdDeleteRetries = 0;
+      }
+      
       setTimeout(() => {
         if (pd.performActions) {
           $.ajax({
@@ -890,17 +911,34 @@ var pd = {
             },
             function () {
               pd.task.info.errors++;
-              if (
-                confirm(
-                  "Error deleting " +
-                    (item.kind == "t3" ? "post" : "comment") +
-                    ", would you like to retry?"
-                )
-              ) {
-                pd.actions.children.handleSingle();
-              } else {
+              item.pdDeleteRetries++;
+              
+              // Retry up to 3 times before asking user
+              if (item.pdDeleteRetries < 3) {
+                pd.actions.delete(item);
+                return;
+              }
+              
+              // After 3 retries, check skip interactions setting
+              if (pd.task.config.skipUserInteractions) {
+                // Skip user interaction, continue with next item
                 pd.actions.children.finishItem();
                 pd.actions.children.handleGroup();
+              } else {
+                // Show confirmation dialog as before
+                if (
+                  confirm(
+                    "Error deleting " +
+                      (item.kind == "t3" ? "post" : "comment") +
+                      " after 3 attempts, would you like to continue with the next item?"
+                  )
+                ) {
+                  pd.actions.children.finishItem();
+                  pd.actions.children.handleGroup();
+                } else {
+                  // User chose to stop processing
+                  pd.ui.done();
+                }
               }
             }
           );
@@ -912,6 +950,11 @@ var pd = {
       }, 5000);
     },
     edit: function (item) {
+      // Initialize retry counter if not present
+      if (!item.pdEditRetries) {
+        item.pdEditRetries = 0;
+      }
+      
       setTimeout(() => {
         if (pd.performActions) {
           var editString = pd.task.config.editText ||
@@ -934,16 +977,32 @@ var pd = {
             },
             function () {
               pd.task.info.errors++;
-              if (
-                !confirm(
-                  "Error editing " +
-                    (item.kind == "t3" ? "post" : "comment") +
-                    ", would you like to retry?"
-                )
-              ) {
-                item.pdEdited = true;
+              item.pdEditRetries++;
+              
+              // Retry up to 3 times before asking user
+              if (item.pdEditRetries < 3) {
+                pd.actions.edit(item);
+                return;
               }
-              pd.actions.children.handleSingle();
+              
+              // After 3 retries, check skip interactions setting
+              if (pd.task.config.skipUserInteractions) {
+                // Skip user interaction, mark as edited and continue
+                item.pdEdited = true;
+                pd.actions.children.handleSingle();
+              } else {
+                // Show confirmation dialog as before
+                if (
+                  !confirm(
+                    "Error editing " +
+                      (item.kind == "t3" ? "post" : "comment") +
+                      " after 3 attempts, would you like to continue with the next item?"
+                  )
+                ) {
+                  item.pdEdited = true;
+                }
+                pd.actions.children.handleSingle();
+              }
             }
           );
         } else {
