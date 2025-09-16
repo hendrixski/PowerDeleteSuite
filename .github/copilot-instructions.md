@@ -1,7 +1,3 @@
-## PowerDeleteSuite — Copilot instructions
-
-Concise, actionable notes to help an AI agent be immediately productive in this repo.
-
 - Big picture
    - Single-page client-side bookmarklet / userscript that runs on old.reddit.com (user overview). No backend; all actions call Reddit JSON endpoints.
    - Runtime entry is `powerdeletesuite.js`. The app exposes a global `pd` object (state, settings, endpoints, helpers).
